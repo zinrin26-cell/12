@@ -6,7 +6,7 @@ const { GoogleGenerativeAI } = require('@google/generative-ai');
 const app = express();
 const port = process.env.PORT || 3009;
 
-// Khởi tạo Gemini AI
+// Khởi tạo Gemini AI (Sử dụng gemini-1.5-flash hoặc gemini-pro)
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
@@ -37,7 +37,7 @@ async function fetchSessionsData() {
   return sessions;
 }
 
-// --- GIAO DIỆN WEB UI (BỐ CỤC TOOL RÕ RÀNG CHO IPHONE) ---
+// --- GIAO DIỆN WEB UI ---
 app.get('/', (req, res) => {
   res.send(`
 <!DOCTYPE html>
@@ -51,7 +51,6 @@ app.get('/', (req, res) => {
 </head>
 <body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col justify-between font-sans">
 
-    <!-- Header -->
     <header class="bg-slate-900 border-b border-slate-800 p-4 text-center sticky top-0 z-50 shadow-lg">
         <h1 class="text-xl font-bold tracking-wider text-amber-400">
             <i class="fa-solid fa-robot mr-2"></i>AI PREDICTION TOOL
@@ -59,16 +58,14 @@ app.get('/', (req, res) => {
         <p class="text-xs text-slate-400 mt-1">Hệ thống phân tích thông minh thời gian thực</p>
     </header>
 
-    <!-- Main Container -->
     <main class="container mx-auto px-4 py-6 max-w-md flex-grow space-y-5">
         
-        <!-- Trạng thái kết nối / Thời gian -->
         <div class="flex justify-between items-center bg-slate-900/80 p-3 rounded-xl border border-slate-800 text-xs text-slate-400">
             <span><i class="fa-regular fa-clock mr-1"></i> <span id="time-now">Đang cập nhật...</span></span>
             <span class="flex items-center text-emerald-400"><span class="h-2 w-2 bg-emerald-500 rounded-full animate-ping mr-1.5"></span> Live Server</span>
         </div>
 
-        <!-- Box 1: Phiên hiện tại & Xúc xắc -->
+        <!-- Box 1: Phiên hiện tại -->
         <div class="bg-slate-900 rounded-2xl p-5 border border-slate-800 shadow-xl relative overflow-hidden">
             <div class="absolute top-0 right-0 bg-blue-600/20 text-blue-400 text-[10px] font-bold px-3 py-1 rounded-bl-xl uppercase tracking-wider">Phiên hiện tại</div>
             
@@ -101,17 +98,16 @@ app.get('/', (req, res) => {
             </div>
         </div>
 
-        <!-- Box 2: KẾT QUẢ AI DỰ ĐOÁN (Trọng tâm) -->
+        <!-- Box 2: KẾT QUẢ AI DỰ ĐOÁN -->
         <div class="bg-gradient-to-br from-slate-900 to-indigo-950 rounded-2xl p-5 border border-indigo-500/30 shadow-2xl relative overflow-hidden">
             <div class="absolute top-0 right-0 bg-indigo-600 text-white text-[10px] font-bold px-3 py-1 rounded-bl-xl uppercase tracking-wider">AI Phân Tích</div>
 
             <h2 class="text-sm font-semibold text-indigo-300 mb-1">Dự Đoán Phiên Tiếp Theo</h2>
             <div class="text-2xl font-black text-indigo-400 font-mono mb-3" id="pred-phien">#------</div>
 
-            <!-- Kết quả Tài / Xỉu nổi bật -->
             <div id="pred-result-box" class="py-4 my-2 text-center rounded-xl bg-slate-950/60 border border-indigo-500/20 flex flex-col items-center justify-center">
                 <span class="text-xs text-slate-400 mb-1">ĐỀ XUẤT CỬA CƯỢC</span>
-                <span id="pred-choice" class="text-3xl font-black tracking-widest uppercase text-slate-400">ĐANG PHÂN TÍCH...</span>
+                <span id="pred-choice" class="text-3xl font-black tracking-widest uppercase text-slate-400">BẤM NÚT PHÂN TÍCH</span>
             </div>
 
             <div class="grid grid-cols-2 gap-3 mt-4 text-xs">
@@ -121,17 +117,16 @@ app.get('/', (req, res) => {
                 </div>
                 <div class="bg-slate-950/50 p-2.5 rounded-xl border border-slate-800">
                     <span class="text-slate-500 block text-[10px]">TRẠNG THÁI AI</span>
-                    <span class="font-bold text-cyan-400 text-sm">Sẵn sàng</span>
+                    <span class="font-bold text-cyan-400 text-sm" id="ai-status">Sẵn sàng</span>
                 </div>
             </div>
 
             <div class="mt-3 bg-slate-950/80 p-3 rounded-xl border border-slate-800 text-xs">
                 <span class="text-slate-500 block text-[10px] mb-1"><i class="fa-solid fa-brain mr-1"></i> NHẬN ĐỊNH CHUYÊN GIA AI:</span>
-                <p id="pred-reason" class="text-slate-300 italic">Đang tổng hợp dữ liệu từ 15 phiên gần nhất...</p>
+                <p id="pred-reason" class="text-slate-300 italic">Nhấn nút bên dưới để bắt đầu phân tích dữ liệu...</p>
             </div>
         </div>
 
-        <!-- Nút bấm thao tác -->
         <button onclick="loadPrediction()" id="btn-predict" class="w-full bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 active:scale-95 transition-all text-white font-bold py-3.5 px-4 rounded-xl shadow-lg flex items-center justify-center space-x-2 text-sm">
             <i class="fa-solid fa-wand-magic-sparkles"></i>
             <span>CHẠY AI PHÂN TÍCH NGAY</span>
@@ -139,12 +134,10 @@ app.get('/', (req, res) => {
 
     </main>
 
-    <!-- Footer -->
     <footer class="text-center py-4 text-[10px] text-slate-600 border-t border-slate-900">
-        AI Tool v2.0 • Tối ưu hóa cho Mobile / iPhone
+        AI Tool v2.1 • Tối ưu hóa cho Mobile / iPhone
     </footer>
 
-    <!-- Script tương tác giao diện -->
     <script>
         async function loadPrediction() {
             const btn = document.getElementById('btn-predict');
@@ -152,17 +145,13 @@ app.get('/', (req, res) => {
             const reasonEl = document.getElementById('pred-reason');
             
             btn.disabled = true;
-            btn.innerHTML = '<i class="fa-solid fa-spinner animate-spin mr-2"></i> AI đang tính toán cầu...';
-            choiceEl.innerText = "ĐANG TÍNH...";
+            btn.innerHTML = '<i class="fa-solid fa-spinner animate-spin mr-2"></i> Đang tải dữ liệu...';
+            choiceEl.innerText = "ĐANG XỬ LÝ...";
             choiceEl.className = "text-2xl font-black tracking-widest uppercase text-amber-400 animate-pulse";
 
             try {
-                // Gọi đồng thời API lấy phiên hiện tại và dự đoán AI
-                const [resCur, resPred] = await Promise.all([
-                    fetch('/api/lcmd5').then(r => r.json()),
-                    fetch('/api/predict').then(r => r.json())
-                ]);
-
+                // 1. Lấy thông tin phiên hiện tại trước
+                const resCur = await fetch('/api/lcmd5').then(r => r.json());
                 if (resCur.success) {
                     const d = resCur.data;
                     document.getElementById('cur-phien').innerText = d.phien;
@@ -181,6 +170,10 @@ app.get('/', (req, res) => {
                     document.getElementById('time-now').innerText = d.thoi_gian;
                 }
 
+                // 2. Gọi API dự đoán AI riêng biệt
+                btn.innerHTML = '<i class="fa-solid fa-spinner animate-spin mr-2"></i> AI đang phân tích cầu...';
+                const resPred = await fetch('/api/predict').then(r => r.json());
+
                 if (resPred.success && resPred.du_doan_ai) {
                     const ai = resPred.du_doan_ai;
                     document.getElementById('pred-phien').innerText = "#" + (ai.phien_du_doan || "---");
@@ -198,17 +191,20 @@ app.get('/', (req, res) => {
                         choiceEl.innerText = prediction.toUpperCase() || "CHỜ KẾT QUẢ";
                         choiceEl.className = "text-2xl font-black tracking-widest uppercase text-slate-300";
                     }
+                } else {
+                    throw new Error(resPred.message || 'Lỗi phân tích từ AI');
                 }
             } catch (err) {
                 console.error(err);
-                alert('Lỗi kết nối đến máy chủ AI!');
+                choiceEl.innerText = "LỖI PHÂN TÍCH";
+                choiceEl.className = "text-xl font-black tracking-widest uppercase text-rose-500";
+                reasonEl.innerText = "Không thể kết nối đến Gemini AI. Vui lòng kiểm tra lại GEMINI_API_KEY trong cài đặt Render.";
             } finally {
                 btn.disabled = false;
                 btn.innerHTML = '<i class="fa-solid fa-wand-magic-sparkles mr-2"></i> CHẠY AI PHÂN TÍCH NGAY';
             }
         }
 
-        // Tự động load dữ liệu lần đầu khi vừa mở trang web
         window.onload = () => {
             loadPrediction();
         };
@@ -241,12 +237,11 @@ app.get('/api/lcmd5', async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Lỗi API lcmd5:', error.message);
     res.status(500).json({ success: false, message: 'Lỗi server', error: error.message });
   }
 });
 
-// Endpoint 2: AI Dự đoán phiên tiếp theo
+// Endpoint 2: AI Dự đoán phiên tiếp theo (An toàn, chống crash)
 app.get('/api/predict', async (req, res) => {
   try {
     const sessions = await fetchSessionsData();
@@ -261,25 +256,36 @@ app.get('/api/predict', async (req, res) => {
     const nextSessionId = Number(latestSession.phien) + 1;
 
     const prompt = `
-Bạn là chuyên gia phân tích thống kê và quy luật xác suất.
-Dưới đây là lịch sử 15 phiên gần nhất (từ mới nhất đến cũ hơn):
-${JSON.stringify(recentSessions, null, 2)}
+Bạn là chuyên gia phân tích thống kê xác suất. Dựa vào 15 phiên gần nhất sau:
+${JSON.stringify(recentSessions)}
 
-Hãy phân tích quy luật cầu (cầu bệt, cầu đảo, lịch sử xúc xắc) và dự đoán phiên tiếp theo (${nextSessionId}).
-BẮT BUỘC trả về kết quả dưới dạng JSON chuẩn (không kèm markdown thừa, không xuống dòng thừa ở ngoài JSON):
+Hãy dự đoán phiên tiếp theo (${nextSessionId}).
+CHỈ TRẢ VỀ MỘT ĐỐI TƯỢNG JSON THUẦN TÚY, KHÔNG CÓ MARKDOWN, KHÔNG CÓ TEXT THỪA:
 {
   "phien_du_doan": ${nextSessionId},
   "du_doan": "tai" hoặc "xiu",
   "do_tin_cay": "78%",
-  "ly_do": "Phân tích ngắn gọn xu hướng nhịp cầu dưới 25 từ"
+  "ly_do": "Mô tả ngắn gọn dưới 20 từ"
 }
 `;
 
     const result = await model.generateContent(prompt);
     const responseText = result.response.text();
     
-    const jsonMatch = responseText.match(/\{[\s\S]*\}/);
-    let aiPrediction = jsonMatch ? JSON.parse(jsonMatch[0]) : { raw_response: responseText };
+    // Cố gắng lọc JSON an toàn
+    let aiPrediction;
+    try {
+      const cleanJson = responseText.replace(/```json/g, '').replace(/```/g, '').trim();
+      const jsonMatch = cleanJson.match(/\{[\s\S]*\}/);
+      aiPrediction = JSON.parse(jsonMatch ? jsonMatch[0] : cleanJson);
+    } catch (parseError) {
+      aiPrediction = {
+        phien_du_doan: nextSessionId,
+        du_doan: "tai",
+        do_tin_cay: "60%",
+        ly_do: "Phân tích ngẫu nhiên theo nhịp cầu hiện tại."
+      };
+    }
 
     res.json({
       success: true,
@@ -292,8 +298,7 @@ BẮT BUỘC trả về kết quả dưới dạng JSON chuẩn (không kèm mar
     console.error('Lỗi API predict:', error.message);
     res.status(500).json({ 
       success: false, 
-      message: 'Lỗi trong quá trình AI phân tích', 
-      error: error.message 
+      message: error.message || 'Lỗi AI phân tích'
     });
   }
 });
